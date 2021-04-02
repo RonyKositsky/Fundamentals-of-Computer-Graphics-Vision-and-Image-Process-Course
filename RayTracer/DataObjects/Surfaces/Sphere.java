@@ -1,11 +1,18 @@
-package DataObjects;
+package DataObjects.Surfaces;
 
-public class Sphere implements ISurface{
+import DataObjects.Point;
+
+/*
+Sphere class.
+ */
+public class Sphere extends Surface {
 
     public Point Position;      /*Position of the sphere center*/
     public float Radius;        /*sphere's radius*/
-    public int MaterialIndex;   /*Index of the material*/
 
+    /*
+    Constructor.
+     */
     public Sphere(Point position, float radius, int materialIndex){
         Position = position;
         Radius = radius;
