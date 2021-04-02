@@ -31,13 +31,6 @@ public class Vector {
     }
 
     /*
-    Returning new vector - subtraction of this vector and another vector.
-    */
-    public Vector VectorsSubtraction(Vector other){
-        return new Vector(x - other.x, y - other.y, z - other.z);
-    }
-
-    /*
     Returning new vector - multiplication by scalar.
     */
     public Vector VectorsScalarMultiplication(double scalar){
