@@ -32,7 +32,11 @@ public class Light {
     /*
     Constructor.
      */
-    public Light(){
-
+    public Light(Point position, Color lightColor, float specularIntensity, float shadowIntensity, float lightRadius){
+        Position = position;
+        LightColor = lightColor;
+        SpecularIntensity = specularIntensity;
+        ShadowIntensity = shadowIntensity;
+        LightRadius = lightRadius;
     }
 }
