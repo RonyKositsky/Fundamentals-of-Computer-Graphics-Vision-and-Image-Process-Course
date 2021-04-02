@@ -1,5 +1,7 @@
 package DataObjects;
 
+import javafx.scene.paint.PhongMaterial;
+
 import java.awt.*;
 
 /*
@@ -31,7 +33,13 @@ public class Material {
     /*
     Constructor.
      */
-    public Material(){
+    public Material(Color diffuseColor, Color specularColor, Color reflectionColor,
+                    float phongSpecularityCoefficient, float transparency){
+        DiffuseColor = diffuseColor;
+        SpecularColor = specularColor;
+        ReflectionColor = reflectionColor;
+        PhongSpecularityCoefficient = phongSpecularityCoefficient;
+        Transparency = transparency;
 
     }
 }
