@@ -21,7 +21,6 @@ public class Scene {
      */
     public int MaximumRecursionLevel;
 
-
     /*
     Constructor.
      */

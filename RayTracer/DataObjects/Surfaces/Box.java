@@ -7,19 +7,25 @@ import DataObjects.Vector;
 import java.util.AbstractMap;
 
 /*
-Sphere class.
+Cube class.
  */
-public class Sphere extends Surface {
+public class Box extends Surface {
 
-    public Point Position;      /*Position of the sphere center*/
-    public float Radius;        /*sphere's radius*/
+    /*
+    Center of the cube.
+     */
+    Point Center;
+    /*
+    Edge length.
+     */
+    double EdgeLength;
 
     /*
     Constructor.
      */
-    public Sphere(Point position, float radius, Material material){
-        Position = position;
-        Radius = radius;
+    public Box(Point center, double edgeLength, Material material){
+        Center = center;
+        EdgeLength = edgeLength;
         SurfaceMaterial = material;
     }
 

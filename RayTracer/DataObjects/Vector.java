@@ -31,6 +31,13 @@ public class Vector {
     }
 
     /*
+      Returning new point - addition of this point and another point.
+       */
+    public Vector VectorSubtraction(Vector other){
+        return new Vector(x - other.x, y - other.y, z - other.z);
+    }
+
+    /*
     Returning new vector - multiplication by scalar.
     */
     public Vector VectorsScalarMultiplication(double scalar){
@@ -68,10 +75,16 @@ public class Vector {
         return VectorsScalarMultiplication(1 / Math.sqrt(DotProduct(this)));
     }
 
+    public Point VectorAsPoint(){
+        return new Point(x,y,z);
+    }
+
     /*
     Creating vector from 2 points.
      */
     public static Vector CreateVectorFromTwoPoints(Point a, Point b) {
         return new Vector(a.x - b.x, a.y - b.y, a.z - b.z);
     }
+
+
 }

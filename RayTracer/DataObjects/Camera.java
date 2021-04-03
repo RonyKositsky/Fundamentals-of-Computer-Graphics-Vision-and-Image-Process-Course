@@ -20,11 +20,11 @@ public class Camera {
     /*
     The distance of the camera's screen from the camera.
      */
-    public float ScreenDistance;
+    public double ScreenDistance;
     /*
     The width of the camera's screen.
      */
-    public float ScreenWidth;
+    public double ScreenWidth;
     /*
     Option of adding a fisheye lens that will perform a fisheye effect on the image.
     */
@@ -37,8 +37,8 @@ public class Camera {
     /*
     Constructor.
      */
-    public Camera(Point cameraPosition, Point lookAtPoint, Vector upVector, float screenDistance,
-                  float screenWidth, boolean fishEye, float kValue){
+    public Camera(Point cameraPosition, Point lookAtPoint, Vector upVector, double screenDistance,
+                  double screenWidth, boolean fishEye, float kValue){
         CameraPosition = cameraPosition;
         LookAtPoint = lookAtPoint;
         UpVector = upVector;

@@ -40,4 +40,8 @@ public class Point {
     public Point PointsSubtraction(Point other){
         return new Point(x - other.x, y - other.y, z - other.z);
     }
+
+    public Vector PointAsVector(){
+        return new Vector(x,y,z);
+    }
 }

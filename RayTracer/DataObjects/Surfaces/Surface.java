@@ -1,5 +1,11 @@
 package DataObjects.Surfaces;
 
+import DataObjects.Material;
+import DataObjects.Point;
+import DataObjects.Vector;
+
+import java.util.AbstractMap;
+
 /*
 Surface interface. Represent all the surface we will deal with.
  */
@@ -8,12 +14,17 @@ public abstract class Surface {
     /*
     The material index from the list of materials.
      */
-    protected int MaterialIndex;
+    protected Material SurfaceMaterial;
 
     /*
     Returning material index.
      */
-    public int GetSurfaceMaterial(){
-        return MaterialIndex;
+    public Material GetSurfaceMaterial(){
+        return SurfaceMaterial;
     }
+
+    /*
+    Finds if the ray intersect with the surface.
+     */
+    public abstract AbstractMap.SimpleEntry<Point, Double> FindIntersection(Vector ray, Vector start);
 }

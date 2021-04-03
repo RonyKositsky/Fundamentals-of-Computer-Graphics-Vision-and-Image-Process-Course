@@ -1,16 +1,26 @@
 package RayTracing;
 
-import java.awt.Transparency;
+import DataObjects.*;
+import DataObjects.Point;
+import DataObjects.Surfaces.Box;
+import DataObjects.Surfaces.Plane;
+import DataObjects.Surfaces.Sphere;
+import DataObjects.Surfaces.Surface;
+
+import java.awt.*;
 import java.awt.color.*;
 import java.awt.image.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
+
+import static DataObjects.Vector.CreateVectorFromTwoPoints;
 
 /**
  *  Main class for ray tracing exercise.
@@ -19,6 +29,11 @@ public class RayTracer {
 
 	public int imageWidth;
 	public int imageHeight;
+	public Scene scene;
+	public Camera camera;
+	List<Material> MaterialsList = new ArrayList<>();
+	List<Surface> SurfacesList = new ArrayList<>();
+	List<Light> LightsList = new ArrayList<>();
 
 	/**
 	 * Runs the ray tracer. Takes scene file, output image file and image size as input.
@@ -29,7 +44,7 @@ public class RayTracer {
 
 			RayTracer tracer = new RayTracer();
 
-                        // Default values:
+			// Default values:
 			tracer.imageWidth = 500;
 			tracer.imageHeight = 500;
 
@@ -66,8 +81,7 @@ public class RayTracer {
 	/**
 	 * Parses the scene file and creates the scene. Change this function so it generates the required objects.
 	 */
-	public void parseScene(String sceneFileName) throws IOException, RayTracerException
-	{
+	public void parseScene(String sceneFileName) throws IOException, RayTracerException {
 		FileReader fr = new FileReader(sceneFileName);
 
 		BufferedReader r = new BufferedReader(fr);
@@ -76,98 +90,110 @@ public class RayTracer {
 		System.out.println("Started parsing scene file " + sceneFileName);
 
 
-
-		while ((line = r.readLine()) != null)
-		{
+		while ((line = r.readLine()) != null) {
 			line = line.trim();
 			++lineNum;
 
-			if (line.isEmpty() || (line.charAt(0) == '#'))
-			{  // This line in the scene file is a comment
+			if (line.isEmpty() || (line.charAt(0) == '#')) {  // This line in the scene file is a comment
 				continue;
 			}
-			else
-			{
+			else {
 				String code = line.substring(0, 3).toLowerCase();
 				// Split according to white space characters:
 				String[] params = line.substring(3).trim().toLowerCase().split("\\s+");
 
-				if (code.equals("cam"))
-				{
-                                        // Add code here to parse camera parameters
+				if (code.equals("cam")) {
+					Point cameraPosition = new Point(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
+							Double.parseDouble(params[2]));
+					Point lookAtPoint = new Point(Double.parseDouble(params[3]), Double.parseDouble(params[4]),
+							Double.parseDouble(params[5]));
+					Vector upVector = new Vector(Double.parseDouble(params[6]), Double.parseDouble(params[7]),
+							Double.parseDouble(params[8]));
+					double screeDistance = Double.parseDouble(params[9]);
+					double screenWidth = Double.parseDouble(params[10]);
+					boolean fishEye = Boolean.parseBoolean(params[11]);
+					float kValue = Float.parseFloat(params[12]);
+
+					camera = new Camera(cameraPosition, lookAtPoint, upVector, screeDistance, screenWidth,
+							fishEye, kValue);
 
 					System.out.println(String.format("Parsed camera parameters (line %d)", lineNum));
 				}
-				else if (code.equals("set"))
-				{
-                                        // Add code here to parse general settings parameters
+				else if (code.equals("set")) {
+					Color bg = new Color(Float.parseFloat(params[0]), Float.parseFloat(params[1]),
+							Float.parseFloat(params[2]));
+					int numOfShadows = Integer.parseInt(params[3]);
+					int maxRecursions = Integer.parseInt(params[4]);
+
+					scene = new Scene(bg, numOfShadows, maxRecursions);
 
 					System.out.println(String.format("Parsed general settings (line %d)", lineNum));
 				}
-				else if (code.equals("mtl"))
-				{
-                                        // Add code here to parse material parameters
+				else if (code.equals("mtl")) {
+					Color diffColor = new Color(Float.parseFloat(params[0]), Float.parseFloat(params[1]),
+							Float.parseFloat(params[2]));
+					Color specColor = new Color(Float.parseFloat(params[3]), Float.parseFloat(params[4]),
+							Float.parseFloat(params[5]));
+					Color reflectColor = new Color(Float.parseFloat(params[6]), Float.parseFloat(params[7]),
+							Float.parseFloat(params[8]));
+					float phong = Float.parseFloat(params[9]);
+					float transparency = Float.parseFloat(params[10]);
 
+					MaterialsList.add(new Material(diffColor, specColor, reflectColor, phong, transparency));
 					System.out.println(String.format("Parsed material (line %d)", lineNum));
 				}
-				else if (code.equals("sph"))
-				{
-                                        // Add code here to parse sphere parameters
+				else if (code.equals("sph")) {
+					Point point = new Point(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
+							Double.parseDouble(params[2]));
+					float radius = Float.parseFloat(params[3]);
 
-                                        // Example (you can implement this in many different ways!):
-					// Sphere sphere = new Sphere();
-                                        // sphere.setCenter(params[0], params[1], params[2]);
-                                        // sphere.setRadius(params[3]);
-                                        // sphere.setMaterial(params[4]);
-
+					SurfacesList.add(new Sphere(point, radius, MaterialsList.get(Integer.parseInt(params[4]))));
 					System.out.println(String.format("Parsed sphere (line %d)", lineNum));
 				}
-				else if (code.equals("pln"))
-				{
-                                        // Add code here to parse plane parameters
+				else if (code.equals("pln")) {
+					Vector vector = new Vector(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
+							Double.parseDouble(params[2]));
+					float off = Float.parseFloat(params[3]);
 
+					SurfacesList.add(new Plane(vector, off, MaterialsList.get(Integer.parseInt(params[4]))));
 					System.out.println(String.format("Parsed plane (line %d)", lineNum));
 				}
-				else if (code.equals("lgt"))
-				{
-                                        // Add code here to parse light parameters
+				else if (code.equals("box")) {
+					Point point = new Point(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
+							Double.parseDouble(params[2]));
+					double edgeLength = Double.parseDouble(params[8]);
 
+					SurfacesList.add(new Box(point, edgeLength, MaterialsList.get(Integer.parseInt(params[4]))));
+					System.out.println(String.format("Parsed box (line %d)", lineNum));
+				}
+				else if (code.equals("lgt")) {
+					Point point = new Point(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
+							Double.parseDouble(params[2]));
+					Color lgColor = new Color(Float.parseFloat(params[3]), Float.parseFloat(params[4]),
+							Float.parseFloat(params[5]));
+					float specIntensity = Float.parseFloat(params[6]);
+					float shadowIntensity = Float.parseFloat(params[7]);
+					float radius = Float.parseFloat(params[8]);
+
+					LightsList.add(new Light(point, lgColor, specIntensity, shadowIntensity, radius));
 					System.out.println(String.format("Parsed light (line %d)", lineNum));
 				}
-				else
-				{
+				else {
 					System.out.println(String.format("ERROR: Did not recognize object: %s (line %d)", code, lineNum));
 				}
 			}
 		}
-
-                // It is recommended that you check here that the scene is valid,
-                // for example camera settings and all necessary materials were defined.
-
 		System.out.println("Finished parsing scene file " + sceneFileName);
-
 	}
 
 	/**
 	 * Renders the loaded scene and saves it to the specified file location.
 	 */
-	public void renderScene(String outputFileName)
-	{
+	public void renderScene(String outputFileName) {
 		long startTime = System.currentTimeMillis();
 
 		// Create a byte array to hold the pixel data:
 		byte[] rgbData = new byte[this.imageWidth * this.imageHeight * 3];
-
-
-                // Put your ray tracing code here!
-                //
-                // Write pixel color values in RGB format to rgbData:
-                // Pixel [x, y] red component is in rgbData[(y * this.imageWidth + x) * 3]
-                //            green component is in rgbData[(y * this.imageWidth + x) * 3 + 1]
-                //             blue component is in rgbData[(y * this.imageWidth + x) * 3 + 2]
-                //
-                // Each of the red, green and blue components should be a byte, i.e. 0-255
-
 
 		long endTime = System.currentTimeMillis();
 		Long renderTime = endTime - startTime;
@@ -181,16 +207,71 @@ public class RayTracer {
 
 	}
 
+	/*
+    Creating ray vector for specific pixel and camera position.
+     */
+	public Vector CreateRay(){
+		Vector ForwardVector = CreateVectorFromTwoPoints(camera.CameraPosition, camera.LookAtPoint).NormalizeVector();
+		Vector RightVector = camera.UpVector.CrossProduct(ForwardVector).NormalizeVector();
 
+		double pixelSize = camera.ScreenWidth / imageWidth;
+		Vector dx = RightVector.VectorsScalarMultiplication(pixelSize);
+		Vector dy = camera.UpVector.VectorsScalarMultiplication(pixelSize);
 
+		//Screen Center = Camera Position + Screen Distance * Forward Vector
+		Vector ScreenCenter = camera.CameraPosition.PointAsVector().VectorsAddition(
+				ForwardVector.VectorsScalarMultiplication(camera.ScreenDistance));
+
+		//tmp = (width - pixel size) * Right Vector + (height - pixel size) * Up Vector
+		Vector temp = RightVector.VectorsScalarMultiplication(imageWidth - pixelSize).
+				VectorsAddition(camera.UpVector.VectorsScalarMultiplication(imageHeight - pixelSize));
+
+		//BottomLeftPixel = Screen Center - 0.5 * tmp
+		Vector BottomLeftPixel = ScreenCenter.VectorSubtraction(temp.VectorsScalarMultiplication(0.5));
+
+		for(int row = 0; row < imageHeight; row++){
+			for(int col = 0; col < imageWidth; col ++){
+
+				//shift = dx * col + dy * row
+				Vector shift = dx.VectorsScalarMultiplication(col).
+						VectorsAddition(dy.VectorsScalarMultiplication(row));
+
+				//current pixel center = shift + bottom left pixel.
+				Vector currentPixelCenter = BottomLeftPixel.VectorsAddition(shift);
+
+				//ray = current pixel - camera position (normalize)
+				Vector currentCenterRay = currentPixelCenter.
+						VectorSubtraction(camera.CameraPosition.PointAsVector()).NormalizeVector();
+			}
+		}
+
+		return null;
+	}
+
+	private Surface GetFirstIntersection(Vector ray, Vector start){
+		double first = Double.POSITIVE_INFINITY;
+		Surface surface = null;
+
+		for(Surface sur : SurfacesList){
+			AbstractMap.SimpleEntry<Point, Double> entry = sur.FindIntersection(ray, start);
+			if(entry != null){
+				double t = entry.getValue();
+				if(entry.getValue() < first){
+					surface = sur;
+					first = t;
+				}
+			}
+		}
+
+		return surface;
+	}
 
 	//////////////////////// FUNCTIONS TO SAVE IMAGES IN PNG FORMAT //////////////////////////////////////////
 
 	/*
 	 * Saves RGB data as an image in png format to the specified location.
 	 */
-	public static void saveImage(int width, byte[] rgbData, String fileName)
-	{
+	public static void saveImage(int width, byte[] rgbData, String fileName) {
 		try {
 
 			BufferedImage image = bytes2RGB(width, rgbData);
