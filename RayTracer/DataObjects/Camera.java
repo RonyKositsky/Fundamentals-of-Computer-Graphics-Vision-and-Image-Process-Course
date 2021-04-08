@@ -28,11 +28,11 @@ public class Camera {
     /*
     Option of adding a fisheye lens that will perform a fisheye effect on the image.
     */
-    public boolean FishEyeLens = false;
+    public boolean FishEyeLens;
     /*
     Fish eye k value.
      */
-    public float KValue = 0.5f;
+    public float KValue;
 
     /*
     Constructor.
@@ -47,4 +47,6 @@ public class Camera {
         FishEyeLens = fishEye;
         KValue = kValue;
     }
+
+
 }

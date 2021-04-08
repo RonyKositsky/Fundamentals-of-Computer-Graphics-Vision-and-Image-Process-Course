@@ -111,8 +111,8 @@ public class RayTracer {
 							Double.parseDouble(params[8]));
 					double screeDistance = Double.parseDouble(params[9]);
 					double screenWidth = Double.parseDouble(params[10]);
-					boolean fishEye = Boolean.parseBoolean(params[11]);
-					float kValue = Float.parseFloat(params[12]);
+					boolean fishEye = params.length != 11 && Boolean.parseBoolean(params[11]);
+					float kValue = params.length < 13 ? 0.5f : Float.parseFloat(params[12]);
 
 					camera = new Camera(cameraPosition, lookAtPoint, upVector, screeDistance, screenWidth,
 							fishEye, kValue);
@@ -143,11 +143,11 @@ public class RayTracer {
 					System.out.println(String.format("Parsed material (line %d)", lineNum));
 				}
 				else if (code.equals("sph")) {
-					Point point = new Point(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
+					Vector position = new Vector(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
 							Double.parseDouble(params[2]));
 					float radius = Float.parseFloat(params[3]);
 
-					SurfacesList.add(new Sphere(point, radius, MaterialsList.get(Integer.parseInt(params[4]))));
+					SurfacesList.add(new Sphere(position, radius, MaterialsList.get(Integer.parseInt(params[4])-1)));
 					System.out.println(String.format("Parsed sphere (line %d)", lineNum));
 				}
 				else if (code.equals("pln")) {
@@ -155,7 +155,7 @@ public class RayTracer {
 							Double.parseDouble(params[2]));
 					float off = Float.parseFloat(params[3]);
 
-					SurfacesList.add(new Plane(vector, off, MaterialsList.get(Integer.parseInt(params[4]))));
+					SurfacesList.add(new Plane(vector, off, MaterialsList.get(Integer.parseInt(params[4])-1)));
 					System.out.println(String.format("Parsed plane (line %d)", lineNum));
 				}
 				else if (code.equals("box")) {
@@ -163,7 +163,7 @@ public class RayTracer {
 							Double.parseDouble(params[2]));
 					double edgeLength = Double.parseDouble(params[8]);
 
-					SurfacesList.add(new Box(point, edgeLength, MaterialsList.get(Integer.parseInt(params[4]))));
+					SurfacesList.add(new Box(point, edgeLength, MaterialsList.get(Integer.parseInt(params[4])-1)));
 					System.out.println(String.format("Parsed box (line %d)", lineNum));
 				}
 				else if (code.equals("lgt")) {
@@ -193,25 +193,9 @@ public class RayTracer {
 		long startTime = System.currentTimeMillis();
 
 		// Create a byte array to hold the pixel data:
-		byte[] rgbData = new byte[this.imageWidth * this.imageHeight * 3];
+		byte[] rgbData = new byte[imageWidth * imageHeight * 3];
 
-		long endTime = System.currentTimeMillis();
-		Long renderTime = endTime - startTime;
-
-		System.out.println("Finished rendering scene in " + renderTime.toString() + " milliseconds.");
-
-                // This is already implemented, and should work without adding any code.
-		saveImage(this.imageWidth, rgbData, outputFileName);
-
-		System.out.println("Saved file " + outputFileName);
-
-	}
-
-	/*
-    Creating ray vector for specific pixel and camera position.
-     */
-	public Vector CreateRay(){
-		Vector ForwardVector = CreateVectorFromTwoPoints(camera.CameraPosition, camera.LookAtPoint).NormalizeVector();
+		Vector ForwardVector = CreateVectorFromTwoPoints(camera.LookAtPoint, camera.CameraPosition).NormalizeVector();
 		Vector RightVector = camera.UpVector.CrossProduct(ForwardVector).NormalizeVector();
 
 		double pixelSize = camera.ScreenWidth / imageWidth;
@@ -223,7 +207,7 @@ public class RayTracer {
 				ForwardVector.VectorsScalarMultiplication(camera.ScreenDistance));
 
 		//tmp = (width - pixel size) * Right Vector + (height - pixel size) * Up Vector
-		Vector temp = RightVector.VectorsScalarMultiplication(imageWidth - pixelSize).
+		Vector temp = RightVector.VectorsScalarMultiplication(camera.ScreenWidth - pixelSize).
 				VectorsAddition(camera.UpVector.VectorsScalarMultiplication(imageHeight - pixelSize));
 
 		//BottomLeftPixel = Screen Center - 0.5 * tmp
@@ -242,18 +226,31 @@ public class RayTracer {
 				//ray = current pixel - camera position (normalize)
 				Vector currentCenterRay = currentPixelCenter.
 						VectorSubtraction(camera.CameraPosition.PointAsVector()).NormalizeVector();
+
+				Surface surface = GetFirstIntersection(currentPixelCenter, currentCenterRay);
+				GetColor(rgbData, 3*(col + row * imageWidth), surface);
 			}
 		}
 
-		return null;
+
+
+		long endTime = System.currentTimeMillis();
+		Long renderTime = endTime - startTime;
+
+		System.out.println("Finished rendering scene in " + renderTime.toString() + " milliseconds.");
+
+                // This is already implemented, and should work without adding any code.
+		saveImage(this.imageWidth, rgbData, outputFileName);
+
+		System.out.println("Saved file " + outputFileName);
 	}
 
-	private Surface GetFirstIntersection(Vector ray, Vector start){
+	private Surface GetFirstIntersection(Vector start, Vector ray){
 		double first = Double.POSITIVE_INFINITY;
 		Surface surface = null;
 
 		for(Surface sur : SurfacesList){
-			AbstractMap.SimpleEntry<Point, Double> entry = sur.FindIntersection(ray, start);
+			AbstractMap.SimpleEntry<Vector, Double> entry = sur.FindIntersection(ray, start);
 			if(entry != null){
 				double t = entry.getValue();
 				if(entry.getValue() < first){
@@ -303,5 +300,15 @@ public class RayTracer {
 		public RayTracerException(String msg) {  super(msg); }
 	}
 
-
+	private void GetColor(byte[] data, int index, Surface surface){
+		if(surface == null){
+			data[index] = (byte)scene.BackgroundColor.getRed();
+			data[index +1] = (byte)scene.BackgroundColor.getGreen();
+			data[index] = (byte)scene.BackgroundColor.getBlue();
+		}else{
+			data[index] = (byte)surface.GetSurfaceMaterial().DiffuseColor.getRed();
+			data[index + 1] = (byte)surface.GetSurfaceMaterial().DiffuseColor.getGreen();
+			data[index + 2] = (byte)surface.GetSurfaceMaterial().DiffuseColor.getBlue();
+		}
+	}
 }

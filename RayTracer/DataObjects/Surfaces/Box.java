@@ -30,7 +30,7 @@ public class Box extends Surface {
     }
 
     @Override
-    public AbstractMap.SimpleEntry<Point, Double> FindIntersection(Vector ray, Vector start) {
+    public AbstractMap.SimpleEntry<Vector, Double> FindIntersection(Vector ray, Vector start) {
         return null;
     }
 }

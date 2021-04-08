@@ -30,7 +30,7 @@ public class Plane extends Surface {
     }
 
     @Override
-    public AbstractMap.SimpleEntry<Point, Double> FindIntersection(Vector ray, Vector start) {
+    public AbstractMap.SimpleEntry<Vector, Double> FindIntersection(Vector ray, Vector start) {
         double dotProduct = Normal.DotProduct(ray);
         if(dotProduct == 0)
             return null;
@@ -38,6 +38,6 @@ public class Plane extends Surface {
         double temp = Normal.DotProduct(start);
         double t = -1 * (Offset + temp) / dotProduct;
         return t < 0 ? null : new AbstractMap.SimpleEntry<>
-                (ray.VectorsScalarMultiplication(t).VectorsAddition(start).VectorAsPoint(), t);
+                (ray.VectorsScalarMultiplication(t).VectorsAddition(start), t);
     }
 }

@@ -75,16 +75,10 @@ public class Vector {
         return VectorsScalarMultiplication(1 / Math.sqrt(DotProduct(this)));
     }
 
-    public Point VectorAsPoint(){
-        return new Point(x,y,z);
-    }
-
     /*
     Creating vector from 2 points.
      */
     public static Vector CreateVectorFromTwoPoints(Point a, Point b) {
         return new Vector(a.x - b.x, a.y - b.y, a.z - b.z);
     }
-
-
 }
