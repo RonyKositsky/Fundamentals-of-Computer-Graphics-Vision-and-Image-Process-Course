@@ -10,7 +10,7 @@ public class Light {
     /*
     Light position.
      */
-    public Point Position;
+    public Vector Position;
     /*
     Light color.
      */
@@ -32,7 +32,7 @@ public class Light {
     /*
     Constructor.
      */
-    public Light(Point position, Color lightColor, float specularIntensity, float shadowIntensity, float lightRadius){
+    public Light(Vector position, Color lightColor, float specularIntensity, float shadowIntensity, float lightRadius){
         Position = position;
         LightColor = lightColor;
         SpecularIntensity = specularIntensity;

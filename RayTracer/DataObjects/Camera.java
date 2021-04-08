@@ -8,11 +8,11 @@ public class Camera {
     /*
     Camera position.
      */
-    public Point CameraPosition;
+    public Vector CameraPosition;
     /*
     A vector specifying the point the camera is looking at.
      */
-    public Point LookAtPoint;
+    public Vector LookAtPoint;
     /*
     The up vector of the camera defines the direction the camera is looking up at.
      */
@@ -37,7 +37,7 @@ public class Camera {
     /*
     Constructor.
      */
-    public Camera(Point cameraPosition, Point lookAtPoint, Vector upVector, double screenDistance,
+    public Camera(Vector cameraPosition, Vector lookAtPoint, Vector upVector, double screenDistance,
                   double screenWidth, boolean fishEye, float kValue){
         CameraPosition = cameraPosition;
         LookAtPoint = lookAtPoint;

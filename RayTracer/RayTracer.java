@@ -103,9 +103,9 @@ public class RayTracer {
 				String[] params = line.substring(3).trim().toLowerCase().split("\\s+");
 
 				if (code.equals("cam")) {
-					Point cameraPosition = new Point(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
+					Vector cameraPosition = new Vector(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
 							Double.parseDouble(params[2]));
-					Point lookAtPoint = new Point(Double.parseDouble(params[3]), Double.parseDouble(params[4]),
+					Vector lookAtPoint = new Vector(Double.parseDouble(params[3]), Double.parseDouble(params[4]),
 							Double.parseDouble(params[5]));
 					Vector upVector = new Vector(Double.parseDouble(params[6]), Double.parseDouble(params[7]),
 							Double.parseDouble(params[8]));
@@ -159,7 +159,7 @@ public class RayTracer {
 					System.out.println(String.format("Parsed plane (line %d)", lineNum));
 				}
 				else if (code.equals("box")) {
-					Point point = new Point(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
+					Vector point = new Vector(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
 							Double.parseDouble(params[2]));
 					double edgeLength = Double.parseDouble(params[8]);
 
@@ -167,7 +167,7 @@ public class RayTracer {
 					System.out.println(String.format("Parsed box (line %d)", lineNum));
 				}
 				else if (code.equals("lgt")) {
-					Point point = new Point(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
+					Vector point = new Vector(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
 							Double.parseDouble(params[2]));
 					Color lgColor = new Color(Float.parseFloat(params[3]), Float.parseFloat(params[4]),
 							Float.parseFloat(params[5]));
@@ -203,7 +203,7 @@ public class RayTracer {
 		Vector dy = camera.UpVector.VectorsScalarMultiplication(pixelSize);
 
 		//Screen Center = Camera Position + Screen Distance * Forward Vector
-		Vector ScreenCenter = camera.CameraPosition.PointAsVector().VectorsAddition(
+		Vector ScreenCenter = camera.CameraPosition.VectorsAddition(
 				ForwardVector.VectorsScalarMultiplication(camera.ScreenDistance));
 
 		//tmp = (width - pixel size) * Right Vector + (height - pixel size) * Up Vector
@@ -225,7 +225,7 @@ public class RayTracer {
 
 				//ray = current pixel - camera position (normalize)
 				Vector currentCenterRay = currentPixelCenter.
-						VectorSubtraction(camera.CameraPosition.PointAsVector()).NormalizeVector();
+						VectorSubtraction(camera.CameraPosition).NormalizeVector();
 
 				Surface surface = GetFirstIntersection(currentPixelCenter, currentCenterRay);
 				GetColor(rgbData, 3*(col + row * imageWidth), surface);
@@ -304,8 +304,8 @@ public class RayTracer {
 	private void GetColor(byte[] data, int index, Surface surface){
 		if(surface == null){
 			data[index] = (byte)scene.BackgroundColor.getRed();
-			data[index +1] = (byte)scene.BackgroundColor.getGreen();
-			data[index] = (byte)scene.BackgroundColor.getBlue();
+			data[index + 1] = (byte)scene.BackgroundColor.getGreen();
+			data[index + 2] = (byte)scene.BackgroundColor.getBlue();
 		}else{
 			data[index] = (byte)surface.GetSurfaceMaterial().DiffuseColor.getRed();
 			data[index + 1] = (byte)surface.GetSurfaceMaterial().DiffuseColor.getGreen();

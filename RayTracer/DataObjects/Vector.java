@@ -78,7 +78,7 @@ public class Vector {
     /*
     Creating vector from 2 points.
      */
-    public static Vector CreateVectorFromTwoPoints(Point a, Point b) {
+    public static Vector CreateVectorFromTwoPoints(Vector a, Vector b) {
         return new Vector(a.x - b.x, a.y - b.y, a.z - b.z);
     }
 }

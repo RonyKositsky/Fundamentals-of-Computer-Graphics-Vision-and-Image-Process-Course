@@ -35,8 +35,8 @@ public class Plane extends Surface {
         if(dotProduct == 0)
             return null;
 
-        double temp = Normal.DotProduct(start);
-        double t = -1 * (Offset + temp) / dotProduct;
+        Vector temp = Normal.VectorsScalarMultiplication(Offset);
+        double t = Normal.DotProduct(temp.VectorSubtraction(start)) / dotProduct;
         return t < 0 ? null : new AbstractMap.SimpleEntry<>
                 (ray.VectorsScalarMultiplication(t).VectorsAddition(start), t);
     }

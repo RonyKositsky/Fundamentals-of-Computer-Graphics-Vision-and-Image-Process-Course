@@ -14,7 +14,7 @@ public class Box extends Surface {
     /*
     Center of the cube.
      */
-    Point Center;
+    Vector Center;
     /*
     Edge length.
      */
@@ -23,7 +23,7 @@ public class Box extends Surface {
     /*
     Constructor.
      */
-    public Box(Point center, double edgeLength, Material material){
+    public Box(Vector center, double edgeLength, Material material){
         Center = center;
         EdgeLength = edgeLength;
         SurfaceMaterial = material;
