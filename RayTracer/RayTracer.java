@@ -208,7 +208,7 @@ public class RayTracer {
 
 		//tmp = (width - pixel size) * Right Vector + (height - pixel size) * Up Vector
 		Vector temp = RightVector.VectorsScalarMultiplication(camera.ScreenWidth - pixelSize).
-				VectorsAddition(camera.UpVector.VectorsScalarMultiplication(imageHeight - pixelSize));
+				VectorsAddition(camera.UpVector.VectorsScalarMultiplication(imageHeight / 500 - pixelSize));
 
 		//BottomLeftPixel = Screen Center - 0.5 * tmp
 		Vector BottomLeftPixel = ScreenCenter.VectorSubtraction(temp.VectorsScalarMultiplication(0.5));
@@ -248,7 +248,7 @@ public class RayTracer {
 	private Surface GetFirstIntersection(Vector start, Vector ray){
 		double first = Double.POSITIVE_INFINITY;
 		Surface surface = null;
-
+		Vector vec =null;
 		for(Surface sur : SurfacesList){
 			AbstractMap.SimpleEntry<Vector, Double> entry = sur.FindIntersection(ray, start);
 			if(entry != null){
@@ -256,6 +256,7 @@ public class RayTracer {
 				if(entry.getValue() < first){
 					surface = sur;
 					first = t;
+					vec = entry.getKey();
 				}
 			}
 		}

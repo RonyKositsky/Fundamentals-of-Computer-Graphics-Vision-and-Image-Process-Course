@@ -48,10 +48,10 @@ public class Vector {
     Returning new vector - cross product of another vector.
     */
     public Vector CrossProduct(Vector other) {
-        double x = y * other.z - z * other.y;
-        double y = z * other.x - x * other.z;
-        double z = x * other.y - y * other.x;
-        return new Vector(x, y, z);
+        double newX = y * other.z - z * other.y;
+        double newY = x * other.z - z * other.x;
+        double newZ = x * other.y - y * other.x;
+        return new Vector(newX, newY, newZ);
     }
 
     /*
