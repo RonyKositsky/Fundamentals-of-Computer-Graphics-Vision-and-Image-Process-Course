@@ -6,6 +6,7 @@ import DataObjects.Surfaces.Box;
 import DataObjects.Surfaces.Plane;
 import DataObjects.Surfaces.Sphere;
 import DataObjects.Surfaces.Surface;
+import Helpers.ColorArithmetics;
 
 import java.awt.*;
 import java.awt.color.*;
@@ -196,7 +197,7 @@ public class RayTracer {
 		byte[] rgbData = new byte[imageWidth * imageHeight * 3];
 
 		Vector ForwardVector = CreateVectorFromTwoPoints(camera.LookAtPoint, camera.CameraPosition).NormalizeVector();
-		Vector RightVector = camera.UpVector.CrossProduct(ForwardVector).NormalizeVector();
+		Vector RightVector = ForwardVector.CrossProduct(camera.UpVector).NormalizeVector();
 
 		double pixelSize = camera.ScreenWidth / imageWidth;
 		Vector dx = RightVector.VectorsScalarMultiplication(pixelSize);
@@ -213,6 +214,10 @@ public class RayTracer {
 		//BottomLeftPixel = Screen Center - 0.5 * tmp
 		Vector BottomLeftPixel = ScreenCenter.VectorSubtraction(temp.VectorsScalarMultiplication(0.5));
 
+		AbstractMap.SimpleEntry<Surface, Vector> entry;
+		Surface surface;
+		Vector hitPoint;
+
 		for(int row = 0; row < imageHeight; row++){
 			for(int col = 0; col < imageWidth; col ++){
 
@@ -227,8 +232,11 @@ public class RayTracer {
 				Vector currentCenterRay = currentPixelCenter.
 						VectorSubtraction(camera.CameraPosition).NormalizeVector();
 
-				Surface surface = GetFirstIntersection(currentPixelCenter, currentCenterRay);
-				GetColor(rgbData, 3*(col + row * imageWidth), surface);
+				entry = GetFirstIntersection(currentPixelCenter, currentCenterRay);
+				surface = entry.getKey();
+				hitPoint = entry.getValue();
+
+				GetColor(rgbData, 3*(col + row * imageWidth), surface, hitPoint);
 			}
 		}
 
@@ -245,7 +253,7 @@ public class RayTracer {
 		System.out.println("Saved file " + outputFileName);
 	}
 
-	private Surface GetFirstIntersection(Vector start, Vector ray){
+	private AbstractMap.SimpleEntry<Surface, Vector> GetFirstIntersection(Vector start, Vector ray){
 		double first = Double.POSITIVE_INFINITY;
 		Surface surface = null;
 		Vector vec =null;
@@ -261,7 +269,7 @@ public class RayTracer {
 			}
 		}
 
-		return surface;
+		return new AbstractMap.SimpleEntry<>(surface, vec);
 	}
 
 	//////////////////////// FUNCTIONS TO SAVE IMAGES IN PNG FORMAT //////////////////////////////////////////
@@ -301,15 +309,90 @@ public class RayTracer {
 		public RayTracerException(String msg) {  super(msg); }
 	}
 
-	private void GetColor(byte[] data, int index, Surface surface){
-		if(surface == null){
+	private void GetColor(byte[] data, int index, Surface surface, Vector hitPoint){
+		if(surface == null){	//ray hit the background
 			data[index] = (byte)scene.BackgroundColor.getRed();
 			data[index + 1] = (byte)scene.BackgroundColor.getGreen();
 			data[index + 2] = (byte)scene.BackgroundColor.getBlue();
-		}else{
-			data[index] = (byte)surface.GetSurfaceMaterial().DiffuseColor.getRed();
-			data[index + 1] = (byte)surface.GetSurfaceMaterial().DiffuseColor.getGreen();
-			data[index + 2] = (byte)surface.GetSurfaceMaterial().DiffuseColor.getBlue();
+		}else{	//ray hit an object
+			Color pixelColor = calculateColor(hitPoint, surface);
+			data[index] = (byte)pixelColor.getRed();	//(byte)surface.GetSurfaceMaterial().DiffuseColor.getRed();
+			data[index + 1] = (byte)pixelColor.getGreen();
+			data[index + 2] = (byte)pixelColor.getBlue();
 		}
+	}
+	private Color calculateColor(Vector hitPoint, Surface surface){
+		Vector intersection;
+		Vector lightRay;
+		double realDistance;
+		double lightDistance;
+		Color colorTotal = Color.BLACK;
+		Color diffuseTemp;
+		float lightIntensity;
+		double nDotL;
+		//Iterating over all lights to see if they hit the given hitPoint directly
+		for(Light light : LightsList){
+			intersection = GetFirstIntersection(light.Position, hitPoint).getValue();
+			realDistance = calculateDistanceTowPoints(light.Position, hitPoint);
+			lightDistance = calculateDistanceTowPoints(light.Position, intersection);
+			if(realDistance == lightDistance){		//Nothing occludes the point of interest
+				lightIntensity = light.SpecularIntensity;
+
+				lightRay = Vector.CreateVectorFromTwoPoints(light.Position, hitPoint).NormalizeVector();
+				/*
+				nDotL = surface.GetNormal(hitPoint).NormalizeVector().DotProduct(lightRay);	//performing N dot L
+				nDotL = nDotL*lightIntensity;
+				diffuseTemp = ColorArithmetics.mult(surface.GetSurfaceMaterial().DiffuseColor, (float)nDotL);
+				diffuseTotal = ColorArithmetics.plus(diffuseTotal, diffuseTemp);
+				*/
+				colorTotal = ColorArithmetics.plus(colorTotal, getSpecularLight(lightRay, surface, hitPoint, light));
+				colorTotal = ColorArithmetics.plus(colorTotal, getDiffuseLight(lightRay, surface, hitPoint, light, lightIntensity));
+			}
+			else{		//Point of interest is occluded
+				lightIntensity = 1-light.ShadowIntensity;
+
+				lightRay = Vector.CreateVectorFromTwoPoints(light.Position, hitPoint).NormalizeVector();
+				/*
+				nDotL = surface.GetNormal(hitPoint).NormalizeVector().DotProduct(lightRay);	//performing N dot L
+				nDotL = nDotL*lightIntensity;
+				diffuseTemp = ColorArithmetics.mult(surface.GetSurfaceMaterial().DiffuseColor, (float)nDotL);
+				diffuseTotal = ColorArithmetics.plus(diffuseTotal, diffuseTemp);
+				 */
+				colorTotal = ColorArithmetics.plus(colorTotal, getDiffuseLight(lightRay, surface, hitPoint, light, lightIntensity));
+				colorTotal = ColorArithmetics.mult(colorTotal, lightIntensity);
+			}
+		}
+		return colorTotal;
+	}
+
+	private double calculateDistanceTowPoints(Vector lightPosition, Vector intersection){
+		double distance = Math.sqrt(Math.pow(lightPosition.x - intersection.x, 2.0) +
+				Math.pow(lightPosition.y - intersection.y, 2.0) +
+				Math.pow(lightPosition.z - intersection.z, 2.0));
+		return distance;
+	}
+
+
+	private Color getSpecularLight(Vector lightRay, Surface surface, Vector hitPoint, Light light){
+		Material material = surface.GetSurfaceMaterial();
+		//R = (2L*N)N - L
+		Vector normal = surface.GetNormal(hitPoint);
+		double dotProduct = lightRay.VectorsScalarMultiplication(2).DotProduct(normal);
+		Vector R = normal.VectorsScalarMultiplication(dotProduct).VectorSubtraction(lightRay);
+
+		//Ispec=Ks Ipcosn(φ)=Ks Ip(R⋅V)n
+		double specularity = Math.pow(R.DotProduct(lightRay),material.PhongSpecularityCoefficient);
+
+		return ColorArithmetics.mult(material.SpecularColor, (float)specularity*light.SpecularIntensity);
+	}
+
+	private Color getDiffuseLight(Vector lightRay, Surface surface, Vector hitPoint, Light light, float lightIntensity){
+		double nDotL;
+		Vector normal = surface.GetNormal(hitPoint).NormalizeVector();
+		Color resColor = ColorArithmetics.mult(surface.GetSurfaceMaterial().DiffuseColor, light.LightColor);
+		nDotL = normal.DotProduct(lightRay);	//performing N dot L
+		nDotL = nDotL*lightIntensity;
+		resColor = ColorArithmetics.mult(resColor, Math.max((float)nDotL, 0));
+		return resColor;
 	}
 }

@@ -41,7 +41,7 @@ public class Camera {
                   double screenWidth, boolean fishEye, float kValue){
         CameraPosition = cameraPosition;
         LookAtPoint = lookAtPoint;
-        UpVector = upVector;
+        UpVector = upVector.VectorsScalarMultiplication(-1);
         ScreenDistance = screenDistance;
         ScreenWidth = screenWidth;
         FishEyeLens = fishEye;

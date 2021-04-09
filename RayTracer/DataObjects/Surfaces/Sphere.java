@@ -34,9 +34,11 @@ public class Sphere extends Surface {
         else
         {
             double[] arr = FindRoots(a,b,disc);
-            if(arr.length == 1 && arr[0] > 0){
-                Vector intersection = start.VectorsAddition(ray.VectorsScalarMultiplication(arr[0]));
-                return new AbstractMap.SimpleEntry<>(intersection, arr[0]);
+            if(arr.length == 1){
+                if(arr[0]>0){
+                    Vector intersection = start.VectorsAddition(ray.VectorsScalarMultiplication(arr[0]));
+                    return new AbstractMap.SimpleEntry<>(intersection, arr[0]);
+                }
             }else{
                 if(arr[0] > 0){
                     Vector intersection = start.VectorsAddition(ray.VectorsScalarMultiplication(arr[0]));
