@@ -50,6 +50,11 @@ public class Sphere extends Surface {
         return null;
     }
 
+    @Override
+    public Vector GetNormal(Vector point) {
+        return Vector.CreateVectorFromTwoPoints(Position, point);
+    }
+
     /*
     Finding the roots of quadratic formula.
      */

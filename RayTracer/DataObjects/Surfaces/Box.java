@@ -33,4 +33,9 @@ public class Box extends Surface {
     public AbstractMap.SimpleEntry<Vector, Double> FindIntersection(Vector ray, Vector start) {
         return null;
     }
+
+    @Override
+    public Vector GetNormal(Vector point) {
+        return null;
+    }
 }

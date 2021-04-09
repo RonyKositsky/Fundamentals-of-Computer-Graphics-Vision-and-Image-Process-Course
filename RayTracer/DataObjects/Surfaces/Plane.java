@@ -40,4 +40,9 @@ public class Plane extends Surface {
         return t < 0 ? null : new AbstractMap.SimpleEntry<>
                 (ray.VectorsScalarMultiplication(t).VectorsAddition(start), t);
     }
+
+    @Override
+    public Vector GetNormal(Vector point) {
+        return Normal;
+    }
 }

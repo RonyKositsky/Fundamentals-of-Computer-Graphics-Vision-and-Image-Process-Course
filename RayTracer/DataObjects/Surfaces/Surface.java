@@ -26,4 +26,6 @@ public abstract class Surface {
     Finds if the ray intersect with the surface.
      */
     public abstract AbstractMap.SimpleEntry<Vector, Double> FindIntersection(Vector ray, Vector start);
+
+    public abstract Vector GetNormal(Vector point);
 }
