@@ -54,7 +54,7 @@ public class Sphere extends Surface {
 
     @Override
     public Vector GetNormal(Vector point) {
-        return Vector.CreateVectorFromTwoPoints(Position, point);
+        return Vector.CreateVectorFromTwoPoints(Position, point).VectorsScalarMultiplication(-1);
     }
 
     /*
