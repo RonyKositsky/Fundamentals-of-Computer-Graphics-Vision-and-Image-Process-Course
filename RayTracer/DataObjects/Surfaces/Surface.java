@@ -18,14 +18,14 @@ public abstract class Surface {
     /*
     Returning material index.
      */
-    public Material GetSurfaceMaterial(){
+    public Material getSurfaceMaterial(){
         return SurfaceMaterial;
     }
 
     /*
     Finds if the ray intersect with the surface.
      */
-    public abstract AbstractMap.SimpleEntry<Vector, Double> FindIntersection(Vector ray, Vector start);
+    public abstract AbstractMap.SimpleEntry<Vector, Double> findIntersection(Vector ray, Vector start);
 
-    public abstract Vector GetNormal(Vector point);
+    public abstract Vector getNormal(Vector point);
 }

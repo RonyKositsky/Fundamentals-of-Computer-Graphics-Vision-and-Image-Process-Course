@@ -1,7 +1,6 @@
 package DataObjects.Surfaces;
 
 import DataObjects.Material;
-import DataObjects.Point;
 import DataObjects.Vector;
 
 import java.util.AbstractMap;
@@ -30,7 +29,7 @@ public class Plane extends Surface {
     }
 
     @Override
-    public AbstractMap.SimpleEntry<Vector, Double> FindIntersection(Vector ray, Vector start) {
+    public AbstractMap.SimpleEntry<Vector, Double> findIntersection(Vector ray, Vector start) {
         double dotProduct = Normal.DotProduct(ray);
         if(dotProduct == 0)
             return null;
@@ -42,7 +41,7 @@ public class Plane extends Surface {
     }
 
     @Override
-    public Vector GetNormal(Vector point) {
+    public Vector getNormal(Vector point) {
         return Normal;
     }
 }

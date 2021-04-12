@@ -1,12 +1,12 @@
 package RayTracing;
 
 import DataObjects.*;
-import DataObjects.Point;
 import DataObjects.Surfaces.Box;
 import DataObjects.Surfaces.Plane;
 import DataObjects.Surfaces.Sphere;
 import DataObjects.Surfaces.Surface;
 import Helpers.ColorArithmetics;
+import Helpers.Utils;
 
 import java.awt.*;
 import java.awt.color.*;
@@ -232,11 +232,11 @@ public class RayTracer {
 				Vector currentCenterRay = currentPixelCenter.
 						VectorSubtraction(camera.CameraPosition).NormalizeVector();
 
-				entry = GetFirstIntersection(currentPixelCenter, currentCenterRay, null);
+				entry = Utils.GetFirstIntersection(currentPixelCenter, currentCenterRay, null, SurfacesList);
 				surface = entry.getKey();
 				hitPoint = entry.getValue();
 
-				GetColor(rgbData, 3*(col + row * imageWidth), surface, currentCenterRay, hitPoint);
+				getColor(rgbData, 3*(col + row * imageWidth), surface, currentCenterRay, hitPoint);
 			}
 		}
 
@@ -247,31 +247,10 @@ public class RayTracer {
 
 		System.out.println("Finished rendering scene in " + renderTime.toString() + " milliseconds.");
 
-                // This is already implemented, and should work without adding any code.
+		// This is already implemented, and should work without adding any code.
 		saveImage(this.imageWidth, rgbData, outputFileName);
 
 		System.out.println("Saved file " + outputFileName);
-	}
-
-	private AbstractMap.SimpleEntry<Surface, Vector> GetFirstIntersection(Vector start, Vector ray,
-																		  Surface ignore){
-		double first = Double.POSITIVE_INFINITY;
-		Surface surface = null;
-		Vector vec =null;
-		for(Surface sur : SurfacesList){
-			if(sur.equals(ignore)) continue;
-			AbstractMap.SimpleEntry<Vector, Double> entry = sur.FindIntersection(ray, start);
-			if(entry != null){
-				double t = entry.getValue();
-				if(entry.getValue() < first){
-					surface = sur;
-					first = t;
-					vec = entry.getKey();
-				}
-			}
-		}
-
-		return new AbstractMap.SimpleEntry<>(surface, vec);
 	}
 
 	//////////////////////// FUNCTIONS TO SAVE IMAGES IN PNG FORMAT //////////////////////////////////////////
@@ -295,26 +274,27 @@ public class RayTracer {
 	 * Producing a BufferedImage that can be saved as png from a byte array of RGB values.
 	 */
 	public static BufferedImage bytes2RGB(int width, byte[] buffer) {
-	    int height = buffer.length / width / 3;
-	    ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
-	    ColorModel cm = new ComponentColorModel(cs, false, false,
-	            Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
-	    SampleModel sm = cm.createCompatibleSampleModel(width, height);
-	    DataBufferByte db = new DataBufferByte(buffer, width * height);
-	    WritableRaster raster = Raster.createWritableRaster(sm, db, null);
-	    BufferedImage result = new BufferedImage(cm, raster, false, null);
+		int height = buffer.length / width / 3;
+		ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+		ColorModel cm = new ComponentColorModel(cs, false, false,
+				Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
+		SampleModel sm = cm.createCompatibleSampleModel(width, height);
+		DataBufferByte db = new DataBufferByte(buffer, width * height);
+		WritableRaster raster = Raster.createWritableRaster(sm, db, null);
+		BufferedImage result = new BufferedImage(cm, raster, false, null);
 
-	    return result;
+		return result;
 	}
 
 	public static class RayTracerException extends Exception {
 		public RayTracerException(String msg) {  super(msg); }
 	}
 
-	private void GetColor(byte[] data, int index, Surface surface, Vector ray, Vector hitPoint){
+	private void getColor(byte[] data, int index, Surface surface, Vector ray, Vector hitPoint){
 		Color pixelColor = calculateColor(hitPoint, surface);
+		pixelColor = getTransparency(hitPoint, ray, surface, pixelColor);
 		Color reflection = getReflection(ray, hitPoint, surface, scene.MaximumRecursionLevel);
-		pixelColor = ColorArithmetics.plus(pixelColor, reflection);
+		pixelColor = ColorArithmetics.addColors(pixelColor, reflection);
 
 		data[index] = (byte)pixelColor.getRed();	//(byte)surface.GetSurfaceMaterial().DiffuseColor.getRed();
 		data[index + 1] = (byte)pixelColor.getGreen();
@@ -322,47 +302,45 @@ public class RayTracer {
 	}
 
 	private Color calculateColor(Vector hitPoint, Surface surface){
-		Surface intersection;
-		Vector lightRay;
-		Color colorTotal = Color.BLACK;
 		if(surface == null)
 			return scene.BackgroundColor;
 
+		Color colorTotal = Color.BLACK;
+
 		//Iterating over all lights to see if they hit the given hitPoint directly
 		for(Light light : LightsList){
-			lightRay = Vector.CreateVectorFromTwoPoints(light.Position, hitPoint).NormalizeVector();
-			intersection = GetFirstIntersection(light.Position, hitPoint, null).getKey();
+			Vector lightRay = Vector.CreateVectorFromTwoPoints(light.Position, hitPoint).NormalizeVector();
 
-			colorTotal = ColorArithmetics.plus(colorTotal, getDiffuseLight(lightRay, surface, hitPoint, light));
-			colorTotal = ColorArithmetics.plus(colorTotal, getSpecularLight(lightRay, surface, hitPoint, light));
-			if(intersection != null && !intersection.equals(surface) ){		//Point of interest is occluded
-				colorTotal = ColorArithmetics.mult(colorTotal, 1-light.ShadowIntensity);
-			}
+			double lightIntensity = calculateLightIntensity(light, hitPoint, lightRay, surface);
+			colorTotal = ColorArithmetics.addColors(colorTotal,
+					getDiffuseLight(lightRay, surface, hitPoint, light, lightIntensity));
+			colorTotal = ColorArithmetics.addColors(colorTotal,
+					getSpecularLight(lightRay, surface, hitPoint, light, lightIntensity));
 		}
 		return colorTotal;
 	}
 
-	private Color getSpecularLight(Vector lightRay, Surface surface, Vector hitPoint, Light light){
-		Material material = surface.GetSurfaceMaterial();
+	private Color getSpecularLight(Vector lightRay, Surface surface, Vector hitPoint, Light light, double lightIntensity){
+		Material material = surface.getSurfaceMaterial();
 		//R = (2L*N)N - L
-		Vector normal = surface.GetNormal(hitPoint).NormalizeVector();
+		Vector normal = surface.getNormal(hitPoint).NormalizeVector();
 		double dotProduct = lightRay.DotProduct(normal);
 		dotProduct = dotProduct*2;
 		Vector R = normal.VectorsScalarMultiplication(dotProduct).VectorSubtraction(lightRay);
 
-		//Ispec=Ks Ipcosn(φ)=Ks Ip(R⋅V)n
-		double specularity = Math.pow(Math.max(R.DotProduct(lightRay),0),material.PhongSpecularityCoefficient);
-
-		return ColorArithmetics.mult(ColorArithmetics.mult(material.SpecularColor, (float)specularity*light.SpecularIntensity),light.LightColor);
+		//Ispec=Ks Ipcosn(φ)=Ks Ip(R⋅V)n * light intensity
+		double specularity = Math.pow(Math.max(R.DotProduct(lightRay),0),material.PhongSpecularityCoefficient) * lightIntensity;
+		return ColorArithmetics.multiplyColors(ColorArithmetics.multiplyColors(material.SpecularColor,
+				(float)specularity*light.SpecularIntensity),light.LightColor);
 	}
 
-	private Color getDiffuseLight(Vector lightRay, Surface surface, Vector hitPoint, Light light){
+	private Color getDiffuseLight(Vector lightRay, Surface surface, Vector hitPoint, Light light, double lightIntensity){
 		double nDotL;
-		Vector normal = surface.GetNormal(hitPoint).NormalizeVector();
-		Color resColor = ColorArithmetics.mult(surface.GetSurfaceMaterial().DiffuseColor, light.LightColor);
-		//resColor = ColorArithmetics.mult(resColor, light.SpecularIntensity);
+		Vector normal = surface.getNormal(hitPoint).NormalizeVector();
+		Color resColor = ColorArithmetics.multiplyColors(surface.getSurfaceMaterial().DiffuseColor, light.LightColor);
+		resColor = ColorArithmetics.multiplyColors(resColor, (float) lightIntensity);
 		nDotL = normal.DotProduct(lightRay);	//performing N dot L
-		resColor = ColorArithmetics.mult(resColor, Math.max((float)nDotL, 0));
+		resColor = ColorArithmetics.multiplyColors(resColor, Math.max((float)nDotL, 0));
 		return resColor;
 	}
 
@@ -370,25 +348,73 @@ public class RayTracer {
 		if (surface == null || recursion == 0)
 			return Color.BLACK;
 
-		Vector normal = surface.GetNormal(hitPoint).NormalizeVector();
+		Vector normal = surface.getNormal(hitPoint).NormalizeVector();
 		double dotProduct = 2.0 * ray.DotProduct(normal);
-		Vector Ndot = normal.VectorsScalarMultiplication(dotProduct);
-		Vector reflectionRay = ray.VectorSubtraction(Ndot);
+		Vector normalDotProduct = normal.VectorsScalarMultiplication(dotProduct);
+		Vector reflectionRay = ray.VectorSubtraction(normalDotProduct);
 
-		var entry = GetFirstIntersection(hitPoint, reflectionRay, surface);
+		AbstractMap.SimpleEntry<Surface, Vector> entry = Utils.GetFirstIntersection(hitPoint, reflectionRay,
+				surface, SurfacesList);
 		Surface hitSurface = entry.getKey();
 		Vector hit = entry.getValue();
 
-		var color = calculateColor(hit, hitSurface);
+		Color color = calculateColor(hit, hitSurface);
+		color = getTransparency(hit, reflectionRay, hitSurface, color);
 
-		// *************
-		//transperancy
-		// *************
+		Color reflection = getReflection(reflectionRay, hit, hitSurface, recursion -1);
+		color = ColorArithmetics.addColors(color, reflection);
+		color = ColorArithmetics.multiplyColors(color, surface.getSurfaceMaterial().ReflectionColor);
 
-		var reflection = getReflection(reflectionRay, hit, hitSurface, recursion -1);
-		color = ColorArithmetics.plus(color, reflection);
-		color = ColorArithmetics.mult(color, surface.GetSurfaceMaterial().ReflectionColor);
+		return color;
+	}
 
+	/*
+
+	 */
+	private double calculateLightIntensity(Light light, Vector hitPoint, Vector lightRay, Surface surface){
+		int n = scene.NumberOfShadowRays;
+		Vector[] axis = Utils.FindPerpendicularPlane(light, lightRay);
+		ShadowGrid grid = new ShadowGrid(light, axis[0], axis[1], scene.NumberOfShadowRays);
+		double hitPercentage = grid.calculateNumberOfLightRayHits(hitPoint, surface, SurfacesList) / Math.pow(n , 2);
+		return (1 - light.ShadowIntensity) + light.ShadowIntensity * hitPercentage;
+	}
+
+	private Color getTransparency(Vector hitPoint, Vector direction, Surface workSurface, Color color){
+
+		if(hitPoint == null || workSurface.getSurfaceMaterial().Transparency == 0){
+			return color;
+		}
+
+		AbstractMap.SimpleEntry<Surface, Vector> rayAfter = Utils.GetFirstIntersection(hitPoint, direction,
+				workSurface, SurfacesList);
+		Surface rayAfterSurface = rayAfter.getKey();
+		Vector rayAfterVector = rayAfter.getValue();
+		float transparency = workSurface.getSurfaceMaterial().Transparency;
+		color = ColorArithmetics.multiplyColors(color, (1-transparency));		//color of current transparent surface
+		Color temp = ColorArithmetics.multiplyColors(calculateColor(rayAfterVector, rayAfterSurface), transparency); //color of surface behind
+		color = ColorArithmetics.addColors(color, temp);
+
+		while(rayAfter.getKey() != null){
+			rayAfterSurface = rayAfter.getKey();
+			rayAfterVector = rayAfter.getValue();
+			transparency = workSurface.getSurfaceMaterial().Transparency;
+			if(rayAfterVector == null || rayAfterSurface.getSurfaceMaterial().Transparency == 0){
+				return color;
+			}
+			if(rayAfterSurface.equals(workSurface)){
+				rayAfter = Utils.GetFirstIntersection(rayAfterVector, direction, workSurface, SurfacesList);
+				if(rayAfter.getKey() != null){
+					workSurface = rayAfter.getKey();
+				}
+				continue;
+			}
+
+			//Surface has a measure of transparency
+			color = ColorArithmetics.multiplyColors(color, (1-transparency));		//color of current transparent surface
+			temp = ColorArithmetics.multiplyColors(calculateColor(rayAfterVector, rayAfterSurface), transparency); //color of surface behind
+			color = ColorArithmetics.addColors(color, temp);
+			rayAfter = Utils.GetFirstIntersection(rayAfterVector, direction, rayAfterSurface, SurfacesList);
+		}
 		return color;
 	}
 }

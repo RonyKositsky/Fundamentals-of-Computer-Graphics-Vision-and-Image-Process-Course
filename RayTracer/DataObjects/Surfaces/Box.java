@@ -1,7 +1,6 @@
 package DataObjects.Surfaces;
 
 import DataObjects.Material;
-import DataObjects.Point;
 import DataObjects.Vector;
 
 import java.util.AbstractMap;
@@ -30,12 +29,12 @@ public class Box extends Surface {
     }
 
     @Override
-    public AbstractMap.SimpleEntry<Vector, Double> FindIntersection(Vector ray, Vector start) {
+    public AbstractMap.SimpleEntry<Vector, Double> findIntersection(Vector ray, Vector start) {
         return null;
     }
 
     @Override
-    public Vector GetNormal(Vector point) {
+    public Vector getNormal(Vector point) {
         return null;
     }
 }

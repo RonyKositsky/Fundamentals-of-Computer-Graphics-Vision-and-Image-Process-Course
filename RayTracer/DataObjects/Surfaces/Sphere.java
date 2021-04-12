@@ -22,7 +22,7 @@ public class Sphere extends Surface {
     }
 
     @Override
-    public AbstractMap.SimpleEntry<Vector, Double> FindIntersection(Vector ray, Vector start) {
+    public AbstractMap.SimpleEntry<Vector, Double> findIntersection(Vector ray, Vector start) {
         Vector vec = start.VectorSubtraction(Position);
         double a = ray.DotProduct(ray);
         double b = 2 * ray.DotProduct(vec);
@@ -53,7 +53,7 @@ public class Sphere extends Surface {
     }
 
     @Override
-    public Vector GetNormal(Vector point) {
+    public Vector getNormal(Vector point) {
         return Vector.CreateVectorFromTwoPoints(Position, point).VectorsScalarMultiplication(-1);
     }
 
