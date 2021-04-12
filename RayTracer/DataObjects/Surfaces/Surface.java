@@ -27,5 +27,8 @@ public abstract class Surface {
      */
     public abstract AbstractMap.SimpleEntry<Vector, Double> findIntersection(Vector ray, Vector start);
 
+    /*
+    Getting the normal on the surface.
+     */
     public abstract Vector getNormal(Vector point);
 }

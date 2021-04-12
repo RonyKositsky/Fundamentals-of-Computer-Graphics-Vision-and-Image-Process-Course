@@ -240,8 +240,6 @@ public class RayTracer {
 			}
 		}
 
-
-
 		long endTime = System.currentTimeMillis();
 		Long renderTime = endTime - startTime;
 
@@ -290,6 +288,9 @@ public class RayTracer {
 		public RayTracerException(String msg) {  super(msg); }
 	}
 
+	/*
+	Get pixel color.
+	 */
 	private void getColor(byte[] data, int index, Surface surface, Vector ray, Vector hitPoint){
 		Color pixelColor = calculateColor(hitPoint, surface);
 		pixelColor = getTransparency(hitPoint, ray, surface, pixelColor);
@@ -301,6 +302,9 @@ public class RayTracer {
 		data[index + 2] = (byte)pixelColor.getBlue();
 	}
 
+	/*
+	Calculating the diffuse and specular color for all the lights.
+	 */
 	private Color calculateColor(Vector hitPoint, Surface surface){
 		if(surface == null)
 			return scene.BackgroundColor;
@@ -320,6 +324,9 @@ public class RayTracer {
 		return colorTotal;
 	}
 
+	/*
+	Calculating the specular color.
+	 */
 	private Color getSpecularLight(Vector lightRay, Surface surface, Vector hitPoint, Light light, double lightIntensity){
 		Material material = surface.getSurfaceMaterial();
 		//R = (2L*N)N - L
@@ -334,6 +341,9 @@ public class RayTracer {
 				(float)specularity*light.SpecularIntensity),light.LightColor);
 	}
 
+	/*
+	Calculating the diffuse color.
+	 */
 	private Color getDiffuseLight(Vector lightRay, Surface surface, Vector hitPoint, Light light, double lightIntensity){
 		double nDotL;
 		Vector normal = surface.getNormal(hitPoint).NormalizeVector();
@@ -369,7 +379,9 @@ public class RayTracer {
 	}
 
 	/*
-
+	Calculating light intensity by the soft shadows algorithm.
+	light intensity = (1 - shadow_intensity) * 1 + shadow_intensity *
+		(%of rays that hit the points from the light source)
 	 */
 	private double calculateLightIntensity(Light light, Vector hitPoint, Vector lightRay, Surface surface){
 		int n = scene.NumberOfShadowRays;
@@ -379,6 +391,9 @@ public class RayTracer {
 		return (1 - light.ShadowIntensity) + light.ShadowIntensity * hitPercentage;
 	}
 
+	/*
+	Calculating the surface transparency color. We will loop until we hit not transparent surface or the background.
+	 */
 	private Color getTransparency(Vector hitPoint, Vector direction, Surface workSurface, Color color){
 
 		if(hitPoint == null || workSurface.getSurfaceMaterial().Transparency == 0){
