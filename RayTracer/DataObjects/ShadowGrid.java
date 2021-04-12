@@ -3,6 +3,7 @@ package DataObjects;
 import DataObjects.Surfaces.Surface;
 import Helpers.Utils;
 
+import java.util.AbstractMap;
 import java.util.List;
 import java.util.Random;
 
@@ -51,7 +52,7 @@ public class ShadowGrid {
                 double randomY = rand.nextDouble() * CellSize;
                 Vector currentRandomPoint = currentPoint.VectorsAddition(new Vector(randomX, randomY, 0));
                 Vector ray = Vector.CreateVectorFromTwoPoints(point, currentRandomPoint).NormalizeVector();
-                var hit = Utils.GetFirstIntersection(currentRandomPoint, ray,
+                AbstractMap.SimpleEntry<Surface, Vector> hit = Utils.GetFirstIntersection(currentRandomPoint, ray,
                         null, surfaceList);
                 if(hit.getKey() != null && hit.getKey().equals(surface))
                     NumberOfHits++;
