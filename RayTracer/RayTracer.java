@@ -432,4 +432,19 @@ public class RayTracer {
 		}
 		return color;
 	}
+
+	private double calc_effective_radius(double k, double theta, double screen_dist){
+		if(k > 0 && k <= 1){
+			return Math.tan(k * theta) * screen_dist / k;
+		}
+
+		if(k == 0){
+			return screen_dist * theta;
+		}
+
+    	else {
+			return Math.sin(k * theta) * screen_dist / k;
+		}
+	}
+
 }
