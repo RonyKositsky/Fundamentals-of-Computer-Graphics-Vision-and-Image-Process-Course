@@ -61,7 +61,6 @@ public class RayTracer {
 				tracer.imageHeight = Integer.parseInt(args[3]);
 			}
 
-
 			// Parse scene file:
 			tracer.parseScene(sceneFileName);
 
@@ -196,22 +195,23 @@ public class RayTracer {
 		// Create a byte array to hold the pixel data:
 		byte[] rgbData = new byte[imageWidth * imageHeight * 3];
 
+		//Calculating global vectors we are going to use.
 		Vector ForwardVector = CreateVectorFromTwoPoints(camera.CameraPosition, camera.LookAtPoint).NormalizeVector();
 		Vector RightVector = ForwardVector.CrossProduct(camera.UpVector).NormalizeVector();
-
 		Vector ScreenCenter = ForwardVector.VectorsScalarMultiplication(camera.ScreenDistance)
 				.VectorsAddition(camera.CameraPosition);
-
 		Vector vp = ForwardVector.CrossProduct(RightVector).NormalizeVector();
 
 		double pixelWidth = camera.ScreenWidth / imageWidth;
 		double pixelHeight = imageWidth / imageHeight * pixelWidth;
 
+		//Iterating over all the pixels.
 		for(int h = 0; h< imageHeight; h++){
 			for(int w =0; w < imageWidth; w++){
 				double xPixel = w + 0.5;
 				double yPixel = h + 0.5;
 
+				double aspectRatio = imageWidth / imageHeight;
 				double upDistance = (yPixel - imageHeight / 2) * pixelHeight;
 				double rightDistance = (xPixel - imageWidth / 2) * pixelWidth;
 
@@ -343,6 +343,9 @@ public class RayTracer {
 		return resColor;
 	}
 
+	/*
+	Calculation the reflections. Recursive function, with maximum depth which is defined in the txt file.
+	 */
 	private Color getReflection(Vector ray, Vector hitPoint, Surface surface, int recursion){
 		if (surface == null || recursion == 0)
 			return Color.BLACK;
