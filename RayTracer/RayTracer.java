@@ -162,7 +162,7 @@ public class RayTracer {
 				else if (code.equals("box")) {
 					Vector point = new Vector(Double.parseDouble(params[0]), Double.parseDouble(params[1]),
 							Double.parseDouble(params[2]));
-					double edgeLength = Double.parseDouble(params[8]);
+					double edgeLength = Double.parseDouble(params[3]);
 
 					SurfacesList.add(new Box(point, edgeLength, MaterialsList.get(Integer.parseInt(params[4])-1)));
 					System.out.println(String.format("Parsed box (line %d)", lineNum));
@@ -196,47 +196,36 @@ public class RayTracer {
 		// Create a byte array to hold the pixel data:
 		byte[] rgbData = new byte[imageWidth * imageHeight * 3];
 
-		Vector ForwardVector = CreateVectorFromTwoPoints(camera.LookAtPoint, camera.CameraPosition).NormalizeVector();
+		Vector ForwardVector = CreateVectorFromTwoPoints(camera.CameraPosition, camera.LookAtPoint).NormalizeVector();
 		Vector RightVector = ForwardVector.CrossProduct(camera.UpVector).NormalizeVector();
 
-		double pixelSize = camera.ScreenWidth / imageWidth;
-		Vector dx = RightVector.VectorsScalarMultiplication(pixelSize);
-		Vector dy = camera.UpVector.VectorsScalarMultiplication(pixelSize);
+		Vector ScreenCenter = ForwardVector.VectorsScalarMultiplication(camera.ScreenDistance)
+				.VectorsAddition(camera.CameraPosition);
 
-		//Screen Center = Camera Position + Screen Distance * Forward Vector
-		Vector ScreenCenter = camera.CameraPosition.VectorsAddition(
-				ForwardVector.VectorsScalarMultiplication(camera.ScreenDistance));
+		Vector vp = ForwardVector.CrossProduct(RightVector).NormalizeVector();
 
-		//tmp = (width - pixel size) * Right Vector + (height - pixel size) * Up Vector
-		Vector temp = RightVector.VectorsScalarMultiplication(camera.ScreenWidth - pixelSize).
-				VectorsAddition(camera.UpVector.VectorsScalarMultiplication(imageHeight / 500 - pixelSize));
+		double pixelWidth = camera.ScreenWidth / imageWidth;
+		double pixelHeight = imageWidth / imageHeight * pixelWidth;
 
-		//BottomLeftPixel = Screen Center - 0.5 * tmp
-		Vector BottomLeftPixel = ScreenCenter.VectorSubtraction(temp.VectorsScalarMultiplication(0.5));
+		for(int h = 0; h< imageHeight; h++){
+			for(int w =0; w < imageWidth; w++){
+				double xPixel = w + 0.5;
+				double yPixel = h + 0.5;
 
-		AbstractMap.SimpleEntry<Surface, Vector> entry;
-		Surface surface;
-		Vector hitPoint;
+				double upDistance = (yPixel - imageHeight / 2) * pixelHeight;
+				double rightDistance = (xPixel - imageWidth / 2) * pixelWidth;
 
-		for(int row = 0; row < imageHeight; row++){
-			for(int col = 0; col < imageWidth; col ++){
+				Vector upMovement = vp.VectorsScalarMultiplication(upDistance);
+				Vector rightMovement = RightVector.VectorsScalarMultiplication(rightDistance);
+				Vector pixelCenter = ScreenCenter.VectorsAddition(upMovement).VectorsAddition(rightMovement);
+				Vector ray = Vector.CreateVectorFromTwoPoints(camera.CameraPosition, pixelCenter).NormalizeVector();
 
-				//shift = dx * col + dy * row
-				Vector shift = dx.VectorsScalarMultiplication(col).
-						VectorsAddition(dy.VectorsScalarMultiplication(row));
+				AbstractMap.SimpleEntry<Surface, Vector> entry =
+						Utils.GetFirstIntersection(camera.CameraPosition, ray, null, SurfacesList);
+				Surface surface = entry.getKey();
+				Vector hitPoint = entry.getValue();
 
-				//current pixel center = shift + bottom left pixel.
-				Vector currentPixelCenter = BottomLeftPixel.VectorsAddition(shift);
-
-				//ray = current pixel - camera position (normalize)
-				Vector currentCenterRay = currentPixelCenter.
-						VectorSubtraction(camera.CameraPosition).NormalizeVector();
-
-				entry = Utils.GetFirstIntersection(currentPixelCenter, currentCenterRay, null, SurfacesList);
-				surface = entry.getKey();
-				hitPoint = entry.getValue();
-
-				getColor(rgbData, 3*(col + row * imageWidth), surface, currentCenterRay, hitPoint);
+				getColor(rgbData, 3*(w + h * imageWidth), surface, ray, hitPoint);
 			}
 		}
 
@@ -332,7 +321,7 @@ public class RayTracer {
 		//R = (2L*N)N - L
 		Vector normal = surface.getNormal(hitPoint).NormalizeVector();
 		double dotProduct = lightRay.DotProduct(normal);
-		dotProduct = dotProduct*2;
+		dotProduct = dotProduct * 2;
 		Vector R = normal.VectorsScalarMultiplication(dotProduct).VectorSubtraction(lightRay);
 
 		//Ispec=Ks Ipcosn(φ)=Ks Ip(R⋅V)n * light intensity
@@ -433,18 +422,10 @@ public class RayTracer {
 		return color;
 	}
 
-	private double calc_effective_radius(double k, double theta, double screen_dist){
-		if(k > 0 && k <= 1){
-			return Math.tan(k * theta) * screen_dist / k;
-		}
+	private double calcEffectiveRadius(double k, double theta, double screenDistance){
+		if(k > 0 && k <= 1)
+			return Math.tan(k * theta) * screenDistance / k;
 
-		if(k == 0){
-			return screen_dist * theta;
-		}
-
-    	else {
-			return Math.sin(k * theta) * screen_dist / k;
-		}
+		return k == 0 ?  screenDistance * theta : Math.sin(k * theta) * screenDistance / k;
 	}
-
 }

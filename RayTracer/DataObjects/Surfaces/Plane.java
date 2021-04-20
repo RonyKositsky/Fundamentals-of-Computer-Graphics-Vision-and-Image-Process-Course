@@ -17,7 +17,7 @@ public class Plane extends Surface {
     /*
     The plane offset.
      */
-    double Offset;
+    public double Offset;
 
     /*
     Constructor.

@@ -49,7 +49,7 @@ public class Vector {
     */
     public Vector CrossProduct(Vector other) {
         double newX = y * other.z - z * other.y;
-        double newY = x * other.z - z * other.x;
+        double newY = z * other.x - x * other.z;
         double newZ = x * other.y - y * other.x;
         return new Vector(newX, newY, newZ);
     }
@@ -65,7 +65,7 @@ public class Vector {
     Getting vector normal.
      */
     public double VectorNormal(){
-        return Math.sqrt(DotProduct(this));
+        return DotProduct(this);
     }
 
     /*

@@ -9,67 +9,46 @@ Sphere class.
  */
 public class Sphere extends Surface {
 
-    public Vector Position;      /*Position of the sphere center*/
+    public Vector Center;      /*Position of the sphere center*/
     public float Radius;        /*sphere's radius*/
 
     /*
     Constructor.
      */
-    public Sphere(Vector position, float radius, Material material){
-        Position = position;
+    public Sphere(Vector center, float radius, Material material){
+        Center = center;
         Radius = radius;
         SurfaceMaterial = material;
     }
 
     @Override
     public AbstractMap.SimpleEntry<Vector, Double> findIntersection(Vector ray, Vector start) {
-        Vector vec = start.VectorSubtraction(Position);
-        double a = ray.DotProduct(ray);
-        double b = 2 * ray.DotProduct(vec);
-        double c = vec.DotProduct(vec) - Math.pow(Radius,2);
-        double disc = Math.pow(b,2) - 4 * a * c;
+        // Taken from this page - https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
 
-        if(disc < 0)
+        Vector direction = start.VectorSubtraction(Center);
+        var temp = -ray.DotProduct(direction); //-(ray*direction)
+        var delta = Math.pow(temp,2) -(direction.VectorNormal() - Math.pow(Radius,2));
+        if(delta < 0)
             return null;
-        else
-        {
-            double[] arr = FindRoots(a,b,disc);
-            if(arr.length == 1){
-                if(arr[0]>0){
-                    Vector intersection = start.VectorsAddition(ray.VectorsScalarMultiplication(arr[0]));
-                    return new AbstractMap.SimpleEntry<>(intersection, arr[0]);
-                }
-            }else{
-                if(arr[0] > 0){
-                    Vector intersection = start.VectorsAddition(ray.VectorsScalarMultiplication(arr[0]));
-                    return new AbstractMap.SimpleEntry<>(intersection, arr[0]);
-                }else if(arr[1] > 0){
-                    Vector intersection = start.VectorsAddition(ray.VectorsScalarMultiplication(arr[1]));
-                    return new AbstractMap.SimpleEntry<>(intersection, arr[1]);
-                }
-            }
+        else if (delta == 0) {
+            Vector hitPoint = start.VectorsAddition(ray.VectorsScalarMultiplication(temp));
+            return temp > 0 ? new AbstractMap.SimpleEntry<>(hitPoint, temp) : null;
+        }else{
+            delta  = Math.sqrt(delta);
+            var arr = SortArray(new double[]{temp + delta, temp - delta});
+            if(arr[0] <0 && arr[1] <0)
+                return null;
+            var minValue = arr[0] < 0 ? arr[1] : arr[0];
+            Vector hitPoint = start.VectorsAddition(ray.VectorsScalarMultiplication(minValue));
+            return new AbstractMap.SimpleEntry<>(hitPoint, minValue);
         }
-        return null;
     }
 
     @Override
     public Vector getNormal(Vector point) {
-        return Vector.CreateVectorFromTwoPoints(Position, point).VectorsScalarMultiplication(-1);
+        return Vector.CreateVectorFromTwoPoints(Center, point).VectorsScalarMultiplication(-1);
     }
 
-    /*
-    Finding the roots of quadratic formula.
-     */
-    private double[] FindRoots(double a, double b, double disc){
-        double denominator = 2*a;
-        if (disc == 0)
-            return new double[]{-b/denominator};
-        else
-            return SortArray(new double[]{
-                    (Math.sqrt(disc) - b)/ denominator,
-                    -(b+Math.sqrt(disc))/ denominator
-            });
-    }
 
     /*
     Sorting array with 2 values.

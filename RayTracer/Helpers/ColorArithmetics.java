@@ -24,7 +24,6 @@ public class ColorArithmetics {
         float blue = (a.getBlue() / 255.0F) + (b.getBlue() / 255.0F);
         float green = (a.getGreen() / 255.0F) + (b.getGreen() / 255.0F);
         return new Color(Math.min(red,1),Math.min(green,1),Math.min(blue,1));
-
     }
 }
 
