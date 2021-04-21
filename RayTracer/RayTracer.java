@@ -219,13 +219,31 @@ public class RayTracer {
 				Vector rightMovement = RightVector.VectorsScalarMultiplication(rightDistance);
 				Vector pixelCenter = ScreenCenter.VectorsAddition(upMovement).VectorsAddition(rightMovement);
 				Vector ray = Vector.CreateVectorFromTwoPoints(camera.CameraPosition, pixelCenter).NormalizeVector();
+				//FishEye calculation
+				if(camera.FishEyeLens){
+					Vector centerToCurrent = CreateVectorFromTwoPoints(ScreenCenter, pixelCenter);
+					double pixelRadius = Math.sqrt(centerToCurrent.DotProduct(centerToCurrent));
+					double theta = calcThetaRadians(camera.KValue, pixelRadius, camera.ScreenDistance);
+					if(theta > (Math.PI/2.0)) {
+						getColor(rgbData, 3 * (w + h * imageWidth), null, null, null, true);
+						continue;
+					}
+					double radiusSize = camera.ScreenDistance*Math.tan(theta);
+
+					Vector radiusVector = Vector.CreateVectorFromTwoPoints(pixelCenter,ScreenCenter).NormalizeVector();
+					radiusVector = radiusVector.VectorsScalarMultiplication(radiusSize).VectorsAddition(ScreenCenter);
+					ray = camera.CameraPosition.VectorSubtraction(radiusVector).NormalizeVector();
+				}
+
 
 				AbstractMap.SimpleEntry<Surface, Vector> entry =
 						Utils.GetFirstIntersection(camera.CameraPosition, ray, null, SurfacesList);
 				Surface surface = entry.getKey();
 				Vector hitPoint = entry.getValue();
 
-				getColor(rgbData, 3*(w + h * imageWidth), surface, ray, hitPoint);
+				getColor(rgbData, 3 * (w + h * imageWidth), surface, ray, hitPoint, false);
+
+
 			}
 		}
 
@@ -280,11 +298,17 @@ public class RayTracer {
 	/*
 	Get pixel color.
 	 */
-	private void getColor(byte[] data, int index, Surface surface, Vector ray, Vector hitPoint){
-		Color pixelColor = calculateColor(hitPoint, surface);
-		pixelColor = getTransparency(hitPoint, ray, surface, pixelColor);
-		Color reflection = getReflection(ray, hitPoint, surface, scene.MaximumRecursionLevel);
-		pixelColor = ColorArithmetics.addColors(pixelColor, reflection);
+	private void getColor(byte[] data, int index, Surface surface, Vector ray, Vector hitPoint, boolean setBlack){
+		Color pixelColor;
+		if(!setBlack) {
+			pixelColor = calculateColor(hitPoint, surface);
+			pixelColor = getTransparency(hitPoint, ray, surface, pixelColor);
+			Color reflection = getReflection(ray, hitPoint, surface, scene.MaximumRecursionLevel);
+			pixelColor = ColorArithmetics.addColors(pixelColor, reflection);
+		}
+		else{
+			pixelColor = Color.BLACK;
+		}
 
 		data[index] = (byte)pixelColor.getRed();	//(byte)surface.GetSurfaceMaterial().DiffuseColor.getRed();
 		data[index + 1] = (byte)pixelColor.getGreen();
@@ -425,10 +449,15 @@ public class RayTracer {
 		return color;
 	}
 
-	private double calcEffectiveRadius(double k, double theta, double screenDistance){
-		if(k > 0 && k <= 1)
-			return Math.tan(k * theta) * screenDistance / k;
-
-		return k == 0 ?  screenDistance * theta : Math.sin(k * theta) * screenDistance / k;
+	private double calcThetaRadians(double k, double radius, double screenDistance){
+		if(k > 0 && k<= 1){
+			return Math.atan((radius*k)/screenDistance)/k;
+		}
+		if(k == 0){
+			return radius/screenDistance;
+		}
+		else {
+			return Math.asin((radius*k)/screenDistance)/k;
+		}
 	}
 }

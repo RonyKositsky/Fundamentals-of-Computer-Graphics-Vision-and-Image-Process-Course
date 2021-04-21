@@ -26,8 +26,8 @@ public class Sphere extends Surface {
         // Taken from this page - https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
 
         Vector direction = start.VectorSubtraction(Center);
-        var temp = -ray.DotProduct(direction); //-(ray*direction)
-        var delta = Math.pow(temp,2) -(direction.VectorNormal() - Math.pow(Radius,2));
+        double temp = -ray.DotProduct(direction); //-(ray*direction)
+        double delta = Math.pow(temp,2) -(direction.VectorNormal() - Math.pow(Radius,2));
         if(delta < 0)
             return null;
         else if (delta == 0) {
@@ -35,10 +35,10 @@ public class Sphere extends Surface {
             return temp > 0 ? new AbstractMap.SimpleEntry<>(hitPoint, temp) : null;
         }else{
             delta  = Math.sqrt(delta);
-            var arr = SortArray(new double[]{temp + delta, temp - delta});
+            double[] arr = SortArray(new double[]{temp + delta, temp - delta});
             if(arr[0] <0 && arr[1] <0)
                 return null;
-            var minValue = arr[0] < 0 ? arr[1] : arr[0];
+            double minValue = arr[0] < 0 ? arr[1] : arr[0];
             Vector hitPoint = start.VectorsAddition(ray.VectorsScalarMultiplication(minValue));
             return new AbstractMap.SimpleEntry<>(hitPoint, minValue);
         }
