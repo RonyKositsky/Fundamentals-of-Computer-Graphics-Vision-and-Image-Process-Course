@@ -224,7 +224,7 @@ public class RayTracer {
 					Vector centerToCurrent = CreateVectorFromTwoPoints(ScreenCenter, pixelCenter);
 					double pixelRadius = Math.sqrt(centerToCurrent.DotProduct(centerToCurrent));
 					double theta = calcThetaRadians(camera.KValue, pixelRadius, camera.ScreenDistance);
-					if(theta > (Math.PI/2.0)) {
+					if(theta > (Math.PI / 2.0)) {
 						getColor(rgbData, 3 * (w + h * imageWidth), null, null, null, true);
 						continue;
 					}
@@ -242,8 +242,6 @@ public class RayTracer {
 				Vector hitPoint = entry.getValue();
 
 				getColor(rgbData, 3 * (w + h * imageWidth), surface, ray, hitPoint, false);
-
-
 			}
 		}
 
@@ -272,7 +270,6 @@ public class RayTracer {
 		} catch (IOException e) {
 			System.out.println("ERROR SAVING FILE: " + e.getMessage());
 		}
-
 	}
 
 	/*
